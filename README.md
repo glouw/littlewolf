@@ -1,8 +1,8 @@
 # littlewolf
 The tiny wolfenstein engine.
-Moreso an exercise in math. No shading and no textures.
+
+make; ./littlewolf
 
 WASD: Move
 H  L: Turn
-
-When you're done hit the END key.
+End: Exit
