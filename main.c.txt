@@ -1,0 +1,378 @@
+#include <SDL2/SDL.h>
+
+typedef struct
+{
+    float x;
+    float y;
+}
+Point;
+
+static Point turn(const Point a, const float t)
+{
+    return (Point) { a.x * cosf(t) - a.y * sinf(t), a.x * sinf(t) + a.y * cosf(t) };
+}
+
+// Right angle rotation
+static Point rag(const Point a)
+{
+    return (Point) { -a.y, a.x };
+}
+
+static Point sub(const Point a, const Point b)
+{
+    return (Point) { a.x - b.x, a.y - b.y };
+}
+
+static Point add(const Point a, const Point b)
+{
+    return (Point) { a.x + b.x, a.y + b.y };
+}
+
+static Point mul(const Point a, const float n)
+{
+    return (Point) { a.x * n, a.y * n };
+}
+
+static float mag(const Point a)
+{
+    return sqrtf(a.x * a.x + a.y * a.y);
+}
+
+static Point dvd(const Point a, const float n)
+{
+    return (Point) { a.x / n, a.y / n };
+}
+
+static Point unt(const Point a)
+{
+    return dvd(a, mag(a));
+}
+
+static float slope(const Point a)
+{
+    return a.y / a.x;
+}
+
+// Fast floor (math)
+static inline int fl(const float x) { const int i = x; return i - (x < i); }
+
+// Fast ceil (math)
+static inline int cl(const float x) { const int i = x; return i + (x > i); }
+
+// Steps horizontally along a grid
+static Point sh(const Point a, const Point b)
+{
+    const float x = b.x > 0.0f ? fl(a.x + 1.0f) : cl(a.x - 1.0f);
+    const float y = slope(b) * (x - a.x) + a.y;
+    return (Point) { x, y };
+}
+
+// Steps vertically along a grid
+static Point sv(const Point a, const Point b)
+{
+    const float y = b.y > 0.0f ? fl(a.y + 1.0f) : cl(a.y - 1.0f);
+    const float x = (y - a.y) / slope(b) + a.x;
+    return (Point) { x, y };
+}
+
+static Point cmp(const Point a, const Point b, const Point c)
+{
+    return mag(sub(b, a)) < mag(sub(c, a)) ? b : c;
+}
+
+static char tile(const Point a, char** const tiles)
+{
+    const int x = a.x;
+    const int y = a.y;
+    return tiles[y][x] - '0';
+}
+
+typedef struct
+{
+    char tile;
+    float offset;
+    Point where;
+}
+Hit;
+
+// Returns the decimal portion of a float
+static inline float dec(const float x) { return x - (int) x; }
+
+static Hit collision(const Point hook, const Point direction, char** const walling)
+{
+    const float epsilon = 1e-4f;
+    return (Hit) {
+        tile(add(hook, mul(direction, epsilon)), walling),
+        dec(hook.x) + dec(hook.y),
+        hook
+    };
+}
+
+static Hit cast(const Point ray, const Point direction, char** const walling)
+{
+    const Point hook = cmp(ray, sh(ray, direction), sv(ray, direction));
+    const Hit hit = collision(hook, direction, walling);
+    return hit.tile ? hit : cast(hook, direction, walling);
+}
+
+typedef struct
+{
+    Point a;
+    Point b;
+}
+Line;
+
+static float focal(const Line l)
+{
+    return l.a.x / (l.b.y - l.a.y);
+}
+
+static float fcast(const Line fov, const int res, const int y)
+{
+    return focal(fov) * res / (2 * y - res);
+}
+
+static float ccast(const Line fov, const int res, const int y)
+{
+    return -fcast(fov, res, y);
+}
+
+static Line rotate(const Line l, const float t)
+{
+    return (Line) { turn(l.a, t), turn(l.b, t) };
+}
+
+// Linear interpolation
+static Point lerp(const Line l, const float n)
+{
+    return add(l.a, mul(sub(l.b, l.a), n));
+}
+
+typedef struct
+{
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Texture* texture;
+}
+Gpu;
+
+static Gpu setup(const int res)
+{
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Window* const window = SDL_CreateWindow("water", 0, 0, res, res, SDL_WINDOW_SHOWN);
+    SDL_Renderer* const renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_Texture* const texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, res, res);
+    return (Gpu) { window, renderer, texture };
+}
+
+static void release(const Gpu gpu)
+{
+    SDL_DestroyWindow(gpu.window);
+    SDL_DestroyRenderer(gpu.renderer);
+    SDL_DestroyTexture(gpu.texture);
+    SDL_Quit();
+}
+
+static void present(const Gpu gpu)
+{
+    SDL_RenderCopyEx(gpu.renderer, gpu.texture, NULL, NULL, 90.0f, NULL, SDL_FLIP_VERTICAL);
+    SDL_RenderPresent(gpu.renderer);
+}
+
+typedef struct
+{
+    uint32_t* pixels;
+    int width;
+}
+Display;
+
+static Display lock(const Gpu gpu)
+{
+    void* screen;
+    int pitch;
+    SDL_LockTexture(gpu.texture, NULL, &screen, &pitch);
+    return (Display) { screen, pitch / sizeof(uint32_t) };
+}
+
+static void put(const Display display, const int x, const int y, const uint32_t pixel)
+{
+    display.pixels[y + x * display.width] = pixel;
+}
+
+static void unlock(const Gpu gpu)
+{
+    SDL_UnlockTexture(gpu.texture);
+}
+
+typedef struct
+{
+    int top;
+    int bot;
+}
+Wall;
+
+static Wall project(const int res, const Line fov, const Point corrected)
+{
+    const int height = focal(fov) * res / corrected.x + 0.5f;
+    const int top = (res - height) / 2;
+    const int bot = (res - top);
+    return (Wall) { top < 0 ? 0 : top, bot > res ? res : bot };
+}
+
+typedef struct
+{
+    Line fov;
+    Point where;
+    Point velocity;
+    float speed;
+    float acceleration;
+    float theta;
+}
+Hero;
+
+static Hero spin(const Hero hero)
+{
+    const uint8_t* key = SDL_GetKeyboardState(NULL);
+    SDL_PumpEvents();
+    Hero step = hero;
+    if(key[SDL_SCANCODE_H]) step.theta -= 0.1f;
+    if(key[SDL_SCANCODE_L]) step.theta += 0.1f;
+    return step;
+}
+
+static Hero move(const Hero hero, char** const walling)
+{
+    const uint8_t* key = SDL_GetKeyboardState(NULL);
+    SDL_PumpEvents();
+    Hero step = hero;
+    // Accelerates if <WASD>
+    if(key[SDL_SCANCODE_W] || key[SDL_SCANCODE_S] || key[SDL_SCANCODE_D] || key[SDL_SCANCODE_A])
+    {
+        const Point reference = { 1.0f, 0.0f };
+        const Point direction = turn(reference, step.theta);
+        const Point acceleration = mul(direction, step.acceleration);
+        if(key[SDL_SCANCODE_W]) step.velocity = add(step.velocity, acceleration);
+        if(key[SDL_SCANCODE_S]) step.velocity = sub(step.velocity, acceleration);
+        if(key[SDL_SCANCODE_D]) step.velocity = add(step.velocity, rag(acceleration));
+        if(key[SDL_SCANCODE_A]) step.velocity = sub(step.velocity, rag(acceleration));
+    }
+    // Otherwise, decelerates (exponential decay)
+    else step.velocity = mul(step.velocity, 1.0f - step.acceleration / step.speed);
+    // Caps velocity if top speed is exceeded
+    if(mag(step.velocity) > step.speed) step.velocity = mul(unt(step.velocity), step.speed);
+    // Moves
+    step.where = add(step.where, step.velocity);
+    // Sets velocity to zero if there is a collision and puts hero back in bounds
+    if(tile(step.where, walling)) step.velocity = (Point) { 0 }, step.where = hero.where;
+    return step;
+}
+
+typedef struct
+{
+    char** ceiling;
+    char** walling;
+    char** flooring;
+}
+Map;
+
+static inline uint32_t color(const char tile) { return 0xAA << (8 * (tile - 1)); }
+
+static void render(const Hero hero, const Map map, const int res, const Gpu gpu)
+{
+    const int t0 = SDL_GetTicks();
+    const Line camera = rotate(hero.fov, hero.theta);
+    const Display display = lock(gpu);
+    for(int x = 0; x < res; x++)
+    {
+        // Casts a ray
+        const Point column = lerp(camera, x / (float) res);
+        const Hit hit = cast(hero.where, column, map.walling);
+        const Point ray = sub(hit.where, hero.where);
+        const Point corrected = turn(ray, -hero.theta);
+        const Wall wall = project(res, hero.fov, corrected);
+        const Line trace = { hero.where, hit.where };
+        // Renders ceiling
+        for(int y = 0; y < wall.top; y++)
+            // Subtracts one from y to prevent overcast edge cases
+            put(display, x, y, color(
+                tile(lerp(trace, ccast(hero.fov, res, y - 1) / corrected.x), map.ceiling)
+            ));
+        // Renders wall
+        for(int y = wall.top; y < wall.bot; y++)
+            put(display, x, y, color(
+                hit.tile
+            ));
+        // Renders flooring
+        for(int y = wall.bot; y < res; y++)
+            // Adds one to y to prevent overcast edge cases
+            put(display, x, y, color(
+                tile(lerp(trace, fcast(hero.fov, res, y + 1) / corrected.x), map.flooring)
+            ));
+    }
+    unlock(gpu);
+    present(gpu);
+    // Caps frame rate
+    const int t1 = SDL_GetTicks();
+    const int ms = 15 - (t1 - t0);
+    SDL_Delay(ms < 0 ? 0 : ms);
+}
+
+static int finished()
+{
+    SDL_Event event;
+    SDL_PollEvent(&event);
+    if(event.type == SDL_QUIT || event.key.keysym.sym == SDLK_F1)
+        return 1;
+    return 0;
+}
+
+int main()
+{
+    const int res = 700;
+    const Gpu gpu = setup(res);
+    char* ceiling[] = {
+        "1111111111111111",
+        "1222232232322321",
+        "122222221111232111111111111111",
+        "122221221232323232323232323231",
+        "122222221111232111111111111111",
+        "1222232232322321",
+        "1111111111111111",
+    };
+    char* walling[] = {
+        "1111111111111111",
+        "1000000000000001",
+        "103330001111000111111111111111",
+        "103000003000020000000000000001",
+        "103330001111000111111111111111",
+        "1000000000000001",
+        "1111111111111111",
+    };
+    char* flooring[] = {
+        "1111111111111111",
+        "1222232232322321",
+        "122222221111232111111111111111",
+        "122222221232323323232323232321",
+        "122222221111232111111111111111",
+        "1222232232322321",
+        "1111111111111111",
+    };
+    const Map map = { ceiling, walling, flooring };
+    Hero hero = {
+        .where = { 3.5f, 3.5f },
+        .velocity  = { 0.0f, 0.0f },
+        .acceleration = 0.01f,
+        .speed = 0.10f,
+        .theta = 0.0f,
+        .fov = {
+            { +1.0f, -1.0f },
+            { +1.0f, +1.0f }
+        }
+    };
+    while(!finished())
+    {
+        hero = spin(move(hero, walling));
+        render(hero, map, res, gpu);
+    }
+    release(gpu);
+}
