@@ -321,7 +321,7 @@ static int finished()
 {
     SDL_Event event;
     SDL_PollEvent(&event);
-    if(event.type == SDL_QUIT || event.key.keysym.sym == SDLK_F1)
+    if(event.type == SDL_QUIT || event.key.keysym.sym == SDLK_END)
         return 1;
     return 0;
 }
