@@ -1,10 +1,14 @@
 # littlewolf
-The tiny wolfenstein engine.
 
-make; ./littlewolf
+Littlewolf aims to be a very minimalistic textureless graphics engine reminiscent
+of the early wolfenstein and doom days.
 
-WASD: Move
+    make; ./littlewolf
 
-H  L: Turn
+Controls:
 
-End: Exit
+    move: w,a,s,d
+
+    turn: mouse
+
+    exit: End
