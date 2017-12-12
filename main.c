@@ -356,7 +356,7 @@ static int finished()
 
 int main()
 {
-    const int res = 700;
+    const int res = 500;
     const Gpu gpu = setup(res);
     const char* ceiling[] = {
         "1111111111111111",
