@@ -311,7 +311,6 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
         const Line trace = { hero.where, hit.where };
         // Renders ceiling.
         for(int y = 0; y < wall.top; y++)
-            // Subtracts one from y to prevent overcast edge cases.
             put(display, x, y, color(
                 tile(lerp(trace, ccast(hero.fov, gpu.res, y + 1) / corrected.x), map.ceiling)
             ));
@@ -322,7 +321,6 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
             ));
         // Renders flooring.
         for(int y = wall.bot; y < gpu.res; y++)
-            // Adds one to y to prevent overcast edge cases.
             put(display, x, y, color(
                 tile(lerp(trace, fcast(hero.fov, gpu.res, y + 0) / corrected.x), map.flooring)
             ));
