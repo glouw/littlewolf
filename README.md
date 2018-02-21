@@ -1,4 +1,4 @@
-![screenshot](scrots/littlewolf.PNG)
+![screenshot](scrots/logo.PNG)
 
 Littlewolf aims to be a very minimalistic software graphics
 engine reminiscent of the early wolfenstein and doom days.
