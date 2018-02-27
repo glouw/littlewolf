@@ -9,8 +9,8 @@ engine reminiscent of the early wolfenstein and doom days.
 
 Controls:
 
-    move: w,a,s,d
+    move: W,A,S,D
 
-    turn: mouse
+    turn: H,L
 
-    exit: End
+    exit: END, ESCAPE
