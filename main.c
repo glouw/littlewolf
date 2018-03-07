@@ -153,7 +153,7 @@ Line;
 // Party casting (flooring and ceiling)
 static float pcast(const float size, const int res, const int y)
 {
-    return size / (2 * y - res);
+    return size / (2 * (y + 1) - res);
 }
 
 static Line rotate(const Line l, const float t)
@@ -322,13 +322,13 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
         const Line trace = { hero.where, hit.where };
         // Renders ceiling.
         for(int y = 0; y < wall.top; y++)
-            put(display, x, y, color(tile(lerp(trace, -pcast(wall.size, gpu.res, y + 1)), map.ceiling)));
+            put(display, x, y, color(tile(lerp(trace, -pcast(wall.size, gpu.res, y)), map.ceiling)));
         // Renders wall.
         for(int y = wall.top; y < wall.bot; y++)
             put(display, x, y, color(hit.tile));
         // Renders flooring.
         for(int y = wall.bot; y < gpu.res; y++)
-            put(display, x, y, color(tile(lerp(trace, +pcast(wall.size, gpu.res, y + 0)), map.floring)));
+            put(display, x, y, color(tile(lerp(trace, +pcast(wall.size, gpu.res, y)), map.floring)));
     }
     unlock(gpu);
     present(gpu);
