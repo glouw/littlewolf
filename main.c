@@ -9,32 +9,47 @@ Point;
 
 static Point turn(const Point a, const float t)
 {
-    const Point b = { a.x * cosf(t) - a.y * sinf(t), a.x * sinf(t) + a.y * cosf(t) };
+    const Point b = {
+        a.x * cosf(t) - a.y * sinf(t),
+        a.x * sinf(t) + a.y * cosf(t),
+    };
     return b;
 }
 
 // Right angle rotation.
 static Point rag(const Point a)
 {
-    const Point b = { -a.y, a.x };
+    const Point b = {
+        -a.y,
+        +a.x,
+    };
     return b;
 }
 
 static Point sub(const Point a, const Point b)
 {
-    const Point c = { a.x - b.x, a.y - b.y };
+    const Point c = {
+        a.x - b.x,
+        a.y - b.y,
+    };
     return c;
 }
 
 static Point add(const Point a, const Point b)
 {
-    const Point c = { a.x + b.x, a.y + b.y };
+    const Point c = {
+        a.x + b.x,
+        a.y + b.y,
+    };
     return c;
 }
 
 static Point mul(const Point a, const float n)
 {
-    const Point b = { a.x * n, a.y * n };
+    const Point b = {
+        a.x * n,
+        a.y * n,
+    };
     return b;
 }
 
@@ -45,7 +60,10 @@ static float mag(const Point a)
 
 static Point dvd(const Point a, const float n)
 {
-    const Point b = { a.x / n, a.y / n };
+    const Point b = {
+        a.x / n,
+        a.y / n,
+    };
     return b;
 }
 
@@ -62,15 +80,13 @@ static float slope(const Point a)
 // Fast floor (math).
 static int fl(const float x)
 {
-    const int i = x;
-    return i - (x < i);
+    return (int) x - (x < (int) x);
 }
 
 // Fast ceil (math).
 static int cl(const float x)
 {
-    const int i = x;
-    return i + (x > i);
+    return (int) x + (x > (int) x);
 }
 
 // Steps horizontally along a grid.
@@ -110,6 +126,7 @@ typedef struct
 }
 Hit;
 
+// Floating point decimal.
 static float dec(const float x)
 {
     return x - (int) x;
@@ -133,16 +150,13 @@ typedef struct
 }
 Line;
 
-static float focal(const Line l)
-{
-    return l.a.x / (l.b.y - l.a.y);
-}
-
+// Floor casting.
 static float fcast(const Line fov, const int res, const int y)
 {
-    return focal(fov) * res / (2 * y - res);
+    return 0.5 * fov.a.x * res / (2 * y - res);
 }
 
+// Ceiling casting.
 static float ccast(const Line fov, const int res, const int y)
 {
     return -fcast(fov, res, y);
@@ -150,7 +164,10 @@ static float ccast(const Line fov, const int res, const int y)
 
 static Line rotate(const Line l, const float t)
 {
-    const Line line = { turn(l.a, t), turn(l.b, t) };
+    const Line line = {
+        turn(l.a, t),
+        turn(l.b, t),
+    };
     return line;
 }
 
@@ -174,7 +191,8 @@ static Gpu setup(const int res)
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window* const window = SDL_CreateWindow("water", 0, 0, res, res, SDL_WINDOW_SHOWN);
     SDL_Renderer* const renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    SDL_Texture* const texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, res, res);
+    SDL_Texture* const texture = SDL_CreateTexture(
+        renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, res, res);
     const Gpu gpu = { window, renderer, texture, res };
     return gpu;
 }
@@ -228,7 +246,7 @@ Wall;
 
 static Wall project(const int res, const Line fov, const Point corrected)
 {
-    const int height = focal(fov) * res / corrected.x + 0.5;
+    const int height = 0.5 * fov.a.x * res / corrected.x + 0.5;
     const int top = (res - height) / 2;
     const int bot = (res - top);
     const Wall wall = { top < 0 ? 0 : top, bot > res ? res : bot };
@@ -246,40 +264,38 @@ typedef struct
 }
 Hero;
 
-static Hero spin(const Hero hero)
+static Hero spin(const Hero hero, const uint8_t* key)
 {
-    const uint8_t* key = SDL_GetKeyboardState(NULL);
-    SDL_PumpEvents();
     Hero step = hero;
     if(key[SDL_SCANCODE_H]) step.theta -= 0.1;
     if(key[SDL_SCANCODE_L]) step.theta += 0.1;
     return step;
 }
 
-static Hero move(const Hero hero, const char** const walling, const uint8_t* key)
+static Hero move(Hero hero, const char** const walling, const uint8_t* key)
 {
-    Hero step = hero;
+    const Point last = hero.where;
     // Accelerates if <WASD>.
     if(key[SDL_SCANCODE_W] || key[SDL_SCANCODE_S] || key[SDL_SCANCODE_D] || key[SDL_SCANCODE_A])
     {
         const Point reference = { 1.0, 0.0 };
-        const Point direction = turn(reference, step.theta);
-        const Point acceleration = mul(direction, step.acceleration);
-        if(key[SDL_SCANCODE_W]) step.velocity = add(step.velocity, acceleration);
-        if(key[SDL_SCANCODE_S]) step.velocity = sub(step.velocity, acceleration);
-        if(key[SDL_SCANCODE_D]) step.velocity = add(step.velocity, rag(acceleration));
-        if(key[SDL_SCANCODE_A]) step.velocity = sub(step.velocity, rag(acceleration));
+        const Point direction = turn(reference, hero.theta);
+        const Point acceleration = mul(direction, hero.acceleration);
+        if(key[SDL_SCANCODE_W]) hero.velocity = add(hero.velocity, acceleration);
+        if(key[SDL_SCANCODE_S]) hero.velocity = sub(hero.velocity, acceleration);
+        if(key[SDL_SCANCODE_D]) hero.velocity = add(hero.velocity, rag(acceleration));
+        if(key[SDL_SCANCODE_A]) hero.velocity = sub(hero.velocity, rag(acceleration));
     }
     // Otherwise, decelerates (exponential decay).
-    else step.velocity = mul(step.velocity, 1.0 - step.acceleration / step.speed);
+    else hero.velocity = mul(hero.velocity, 1.0 - hero.acceleration / hero.speed);
     // Caps velocity if top speed is exceeded.
-    if(mag(step.velocity) > step.speed) step.velocity = mul(unt(step.velocity), step.speed);
+    if(mag(hero.velocity) > hero.speed) hero.velocity = mul(unt(hero.velocity), hero.speed);
     // Moves
-    step.where = add(step.where, step.velocity);
+    hero.where = add(hero.where, hero.velocity);
     // Sets velocity to zero if there is a collision and puts hero back in bounds.
     const Point zero = { 0.0, 0.0};
-    if(tile(step.where, walling)) step.velocity = zero, step.where = hero.where;
-    return step;
+    if(tile(hero.where, walling)) hero.velocity = zero, hero.where = last;
+    return hero;
 }
 
 typedef struct
@@ -312,18 +328,15 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
         // Renders ceiling.
         for(int y = 0; y < wall.top; y++)
             put(display, x, y, color(
-                tile(lerp(trace, ccast(hero.fov, gpu.res, y + 1) / corrected.x), map.ceiling)
-            ));
+                tile(lerp(trace, ccast(hero.fov, gpu.res, y + 1) / corrected.x), map.ceiling)));
         // Renders wall.
         for(int y = wall.top; y < wall.bot; y++)
             put(display, x, y, color(
-                hit.tile
-            ));
+                hit.tile));
         // Renders flooring.
         for(int y = wall.bot; y < gpu.res; y++)
             put(display, x, y, color(
-                tile(lerp(trace, fcast(hero.fov, gpu.res, y + 0) / corrected.x), map.flooring)
-            ));
+                tile(lerp(trace, fcast(hero.fov, gpu.res, y + 0) / corrected.x), map.flooring)));
     }
     unlock(gpu);
     present(gpu);
@@ -392,7 +405,8 @@ int main()
     while(!finished())
     {
         const uint8_t* key = SDL_GetKeyboardState(NULL);
-        hero = spin(move(hero, walling, key));
+        hero = spin(hero, key);
+        hero = move(hero, walling, key);
         render(hero, map, gpu);
     }
     release(gpu);
