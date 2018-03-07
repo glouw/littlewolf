@@ -14,9 +14,7 @@ CFLAGS = -Wshadow -Wall -Wpedantic -Wextra -Wimplicit-fallthrough=5
 CFLAGS+= -g
 
 # Optimization flags.
-CFLAGS+= -Ofast -march=native -flto -fsingle-precision-constant
-CFLAGS+= -fassociative-math -freciprocal-math -fno-signed-zeros
-CFLAGS+= -frename-registers -funroll-loops -fno-trapping-math
+CFLAGS+= -Ofast -march=native -flto -Wdouble-promotion
 
 # Linker flags.
 LDFLAGS = -lm -lSDL2
