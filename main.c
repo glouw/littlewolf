@@ -243,8 +243,8 @@ Wall;
 static Wall project(const int res, const Line fov, const Point corrected)
 {
     const float size = 0.5f * fov.a.x * res / corrected.x;
-    const float top = (res - size) / 2;
-    const float bot = (res - top);
+    const float top = (res - size) / 2.0f;
+    const float bot = (res + size) / 2.0f;
     const Wall wall = { top < 0.0f ? 0.0f : top, bot > (float) res ? (float) res : bot, size };
     return wall;
 }
