@@ -234,8 +234,8 @@ static void unlock(const Gpu gpu)
 
 typedef struct
 {
-    float top;
-    float bot;
+    int top;
+    int bot;
     float size;
 }
 Wall;
@@ -243,9 +243,9 @@ Wall;
 static Wall project(const int res, const Line fov, const Point corrected)
 {
     const float size = 0.5f * fov.a.x * res / corrected.x;
-    const float top = (res - size) / 2.0f;
-    const float bot = (res + size) / 2.0f;
-    const Wall wall = { top < 0.0f ? 0.0f : top, bot > (float) res ? (float) res : bot, size };
+    const int top = (res - size) / 2.0f;
+    const int bot = (res + size) / 2.0f;
+    const Wall wall = { top < 0 ? 0 : top, bot > res ? res : bot, size };
     return wall;
 }
 
