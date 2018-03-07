@@ -202,7 +202,7 @@ static void release(const Gpu gpu)
 
 static void present(const Gpu gpu)
 {
-    SDL_RenderCopyEx(gpu.renderer, gpu.texture, NULL, NULL, 90.0f, NULL, SDL_FLIP_VERTICAL);
+    SDL_RenderCopyEx(gpu.renderer, gpu.texture, NULL, NULL, -90.0f, NULL, SDL_FLIP_NONE);
     SDL_RenderPresent(gpu.renderer);
 }
 
@@ -243,9 +243,9 @@ Wall;
 static Wall project(const int res, const Line fov, const Point corrected)
 {
     const float size = 0.5f * fov.a.x * res / corrected.x;
-    const int top = (res - size) / 2.0f;
-    const int bot = (res + size) / 2.0f;
-    const Wall wall = { top < 0 ? 0 : top, bot > res ? res : bot, size };
+    const int top = (res + size) / 2.0f;
+    const int bot = (res - size) / 2.0f;
+    const Wall wall = { top > res ? res : top, bot < 0 ? 0 : bot, size };
     return wall;
 }
 
@@ -320,15 +320,15 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
         const Point corrected = turn(ray, -hero.theta);
         const Wall wall = project(gpu.res, hero.fov, corrected);
         const Line trace = { hero.where, hit.where };
-        // Renders ceiling.
-        for(int y = 0; y < wall.top; y++)
-            put(display, x, y, color(tile(lerp(trace, -pcast(wall.size, gpu.res, y)), map.ceiling)));
-        // Renders wall.
-        for(int y = wall.top; y < wall.bot; y++)
-            put(display, x, y, color(hit.tile));
         // Renders flooring.
-        for(int y = wall.bot; y < gpu.res; y++)
-            put(display, x, y, color(tile(lerp(trace, +pcast(wall.size, gpu.res, y)), map.floring)));
+        for(int y = 0; y < wall.bot; y++)
+            put(display, x, y, color(tile(lerp(trace, -pcast(wall.size, gpu.res, y)), map.floring)));
+        // Renders wall.
+        for(int y = wall.bot; y < wall.top; y++)
+            put(display, x, y, color(hit.tile));
+        // Renders ceiling.
+        for(int y = wall.top; y < gpu.res; y++)
+            put(display, x, y, color(tile(lerp(trace, +pcast(wall.size, gpu.res, y)), map.ceiling)));
     }
     unlock(gpu);
     present(gpu);
