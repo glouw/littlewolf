@@ -19,9 +19,7 @@ On macOS you can do
 Then build and run with
     
     make; ./littlewolf
-
-![screenshot](scrots/2017-12-12-012113_500x500_scrot.png)
-
+    
 Controls:
 
     move: W,A,S,D
@@ -29,3 +27,5 @@ Controls:
     turn: H,L
 
     exit: END, ESCAPE
+
+![screenshot](scrots/2017-12-12-012113_500x500_scrot.png)
