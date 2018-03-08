@@ -1,41 +1,59 @@
-# Compiler and standard.
-CC = gcc -std=c99
+CC = gcc
 
-# Project name.
-PROJ = littlewolf
+NAME = littlewolf
 
-# Source files.
 SRCS = main.c
 
-# Warnings flags.
-CFLAGS = -Wshadow -Wall -Wpedantic -Wextra -Wimplicit-fallthrough=5
+# CompSpec defined in windows environment.
+ifdef ComSpec
+	BIN = $(NAME).exe
+else
+	BIN = $(NAME)
+endif
 
-# Debugging flags.
-CFLAGS+= -g
+CFLAGS =
+ifdef ComSpec
+	CFLAGS += -I ../SDL2-2.0.7/i686-w64-mingw32/include
+	CFLAGS += -I ../SDL2-2.0.7/i686-w64-mingw32/include/SDL2
+endif
+CFLAGS += -std=c99
+CFLAGS += -Wshadow -Wall -Wpedantic -Wextra -Wdouble-promotion
+CFLAGS += -g
+CFLAGS += -Ofast
+CFLAGS += -flto
 
-# Optimization flags.
-CFLAGS+= -Ofast -march=native -flto -Wdouble-promotion
+LDFLAGS =
+ifdef ComSpec
+	LDFLAGS += -L..\SDL2-2.0.7\i686-w64-mingw32\lib
+	LDFLAGS += -lmingw32
+	LDFLAGS += -lSDL2main
+endif
+LDFLAGS += -lSDL2 -lm
 
-# Linker flags.
-LDFLAGS = -lm -lSDL2
+ifdef ComSpec
+	RM = del /F /Q
+	MV = ren
+else
+	RM = rm -f
+	MV = mv -f
+endif
 
-# Linker.
-$(PROJ): $(SRCS:.c=.o)
-	$(CC) $(CFLAGS) $(SRCS:.c=.o) $(LDFLAGS) -o $(PROJ)
+# Link.
+$(BIN): $(SRCS:.c=.o)
+	$(CC) $(CFLAGS) $(SRCS:.c=.o) $(LDFLAGS) -o $(BIN)
 
-# Compiler template; generates dependency targets.
-%.o : %.c
+# Compile.
+%.o : %.c Makefile
 	$(CC) $(CFLAGS) -MMD -MP -MT $@ -MF $*.td -c $<
-	@mv -f $*.td $*.d
-
-# All dependency targets.
+	@$(RM) $*.d
+	@$(MV) $*.td $*.d
 %.d: ;
 -include *.d
 
 clean:
-	rm -f vgcore.*
-	rm -f cachegrind.out.*
-	rm -f callgrind.out.*
-	rm -f $(PROJ)
-	rm -f $(SRCS:.c=.o)
-	rm -f $(SRCS:.c=.d)
+	$(RM) vgcore.*
+	$(RM) cachegrind.out.*
+	$(RM) callgrind.out.*
+	$(RM) $(BIN)
+	$(RM) $(SRCS:.c=.o)
+	$(RM) $(SRCS:.c=.d)

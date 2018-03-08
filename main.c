@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <math.h>
 
 typedef struct
 {
@@ -349,8 +350,10 @@ static int finished()
     return 0;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    (void) argc;
+    (void) argv;
     const Gpu gpu = setup(500);
     const char* ceiling[] = {
         "11111111111111111111111111111111111111111111111",
@@ -408,4 +411,5 @@ int main()
         render(hero, map, gpu);
     }
     release(gpu);
+    return 0;
 }
