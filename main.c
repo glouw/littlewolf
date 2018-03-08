@@ -1,4 +1,6 @@
 #include <SDL2/SDL.h>
+#include <stdio.h>
+#include <math.h>
 
 typedef struct
 {
@@ -184,10 +186,25 @@ static Gpu setup(const int res)
 {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window* const window = SDL_CreateWindow(
-        "littlewolf", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, res, res, SDL_WINDOW_SHOWN);
-    SDL_Renderer* const renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+        "littlewolf",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        res,
+        res,
+        SDL_WINDOW_SHOWN
+    );
+    SDL_Renderer* const renderer = SDL_CreateRenderer(
+        window,
+        -1,
+        SDL_RENDERER_ACCELERATED
+    );
     SDL_Texture* const texture = SDL_CreateTexture(
-        renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, res, res);
+        renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        res,
+        res
+    );
     const Gpu gpu = { window, renderer, texture, res };
     return gpu;
 }
@@ -202,7 +219,15 @@ static void release(const Gpu gpu)
 
 static void present(const Gpu gpu)
 {
-    SDL_RenderCopyEx(gpu.renderer, gpu.texture, NULL, NULL, -90.0f, NULL, SDL_FLIP_NONE);
+    SDL_RenderCopyEx(
+      gpu.renderer,
+      gpu.texture,
+      NULL,
+      NULL,
+      -90.0f,
+      NULL,
+      SDL_FLIP_NONE
+    );
     SDL_RenderPresent(gpu.renderer);
 }
 
@@ -218,11 +243,18 @@ static Display lock(const Gpu gpu)
     void* screen;
     int pitch;
     SDL_LockTexture(gpu.texture, NULL, &screen, &pitch);
-    const Display display = { (uint32_t*) screen, pitch / (int) sizeof(uint32_t) };
+    const Display display = {
+      (uint32_t*) screen,
+      pitch / (int) sizeof(uint32_t)
+    };
     return display;
 }
 
-static void put(const Display display, const int x, const int y, const uint32_t pixel)
+static void put(
+  const Display display,
+  const int x, const int y,
+  const uint32_t pixel
+)
 {
     display.pixels[y + x * display.width] = pixel;
 }
@@ -242,7 +274,8 @@ Wall;
 
 static Wall project(const int res, const Line fov, const Point corrected)
 {
-    const float size = 0.5f * fov.a.x * res / corrected.x;
+    // size is apparent hieght of ceiling
+    const float size = 0.4f * fov.a.x * res / corrected.x;
     const int top = (res + size) / 2.0f;
     const int bot = (res - size) / 2.0f;
     const Wall wall = { top > res ? res : top, bot < 0 ? 0 : bot, size };
@@ -271,7 +304,12 @@ static Hero move(Hero hero, const char** const walling, const uint8_t* key)
 {
     const Point last = hero.where;
     // Accelerates if <WASD>.
-    if(key[SDL_SCANCODE_W] || key[SDL_SCANCODE_S] || key[SDL_SCANCODE_D] || key[SDL_SCANCODE_A])
+    if(
+        key[SDL_SCANCODE_W]
+        || key[SDL_SCANCODE_S]
+        || key[SDL_SCANCODE_D]
+        || key[SDL_SCANCODE_A]
+      )
     {
         const Point reference = { 1.0f, 0.0f };
         const Point direction = turn(reference, hero.theta);
@@ -282,9 +320,15 @@ static Hero move(Hero hero, const char** const walling, const uint8_t* key)
         if(key[SDL_SCANCODE_A]) hero.velocity = sub(hero.velocity, rag(acceleration));
     }
     // Otherwise, decelerates (exponential decay).
-    else hero.velocity = mul(hero.velocity, 1.0f - hero.acceleration / hero.speed);
+    else
+    {
+        hero.velocity = mul(hero.velocity, 1.0f - hero.acceleration / hero.speed);
+    }
     // Caps velocity if top speed is exceeded.
-    if(mag(hero.velocity) > hero.speed) hero.velocity = mul(unt(hero.velocity), hero.speed);
+    if(mag(hero.velocity) > hero.speed)
+    {
+        hero.velocity = mul(unt(hero.velocity), hero.speed);
+    }
     // Moves
     hero.where = add(hero.where, hero.velocity);
     // Sets velocity to zero if there is a collision and puts hero back in bounds.
@@ -303,7 +347,8 @@ Map;
 
 static uint32_t color(const char tile)
 {
-    return 0xAA << (8 * (tile - 1));
+    // these numbers affect color
+    return 0xAA << (3 * (tile + 1));
 }
 
 static void render(const Hero hero, const Map map, const Gpu gpu)
@@ -322,13 +367,17 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
         const Line trace = { hero.where, hit.where };
         // Renders flooring.
         for(int y = 0; y < wall.bot; y++)
-            put(display, x, y, color(tile(lerp(trace, -pcast(wall.size, gpu.res, y)), map.floring)));
+            put(
+                display, x, y,
+                color(tile(lerp(trace, -pcast(wall.size, gpu.res, y)), map.floring)));
         // Renders wall.
         for(int y = wall.bot; y < wall.top; y++)
             put(display, x, y, color(hit.tile));
         // Renders ceiling.
         for(int y = wall.top; y < gpu.res; y++)
-            put(display, x, y, color(tile(lerp(trace, +pcast(wall.size, gpu.res, y)), map.ceiling)));
+            put(
+                display, x, y,
+                color(tile(lerp(trace, +pcast(wall.size, gpu.res, y)), map.ceiling)));
     }
     unlock(gpu);
     present(gpu);
@@ -351,39 +400,40 @@ static int finished()
 
 int main()
 {
-    const Gpu gpu = setup(500);
+    const Gpu gpu = setup(600);
     const char* ceiling[] = {
         "11111111111111111111111111111111111111111111111",
         "11111111111111111111111111111111111111111111111",
-        "11222232232322321111111111111112222322323223211",
-        "11222222211112321111111111111112222222111123211",
-        "11222212212323232323232323232322222122123232311",
-        "11222222211112321111111111111112222222111123211",
-        "11222232232322321111111111111112222322323223211",
+        "11111111111111111111111111111111111111111111111",
+        "11111111111111111111111111111111111111111111111",
+        "11111111111111111111111111111111111111111111111",
+        "11111111111111111111111111111111111111111111111",
+        "11111111111111111111111111111111111111111111111",
         "11111111111111111111111111111111111111111111111",
         "11111111111111111111111111111111111111111111111",
     };
     const char* walling[] = {
+        // zeros are where you can walk
         "11111111111111111111111111111111111111111111111",
-        "11111111111111111111111111111111111111111111111",
-        "11000000000000001111111111111110000000000000011",
-        "11033300011110001111111111111110333000111100011",
-        "11030000000000000000000000000000300000300000011",
-        "11033300011110001111111111111110333000111100011",
-        "11000000000000001111111111111110000000000000011",
-        "11111111111111111111111111111111111111111111111",
+        "10000000000000000000000000000000000000000000001",
+        "10000000000000000000000000000000000000000000001",
+        "10033300000000000000000000000000333000000000001",
+        "10030000000000000000000000000000300000300000001",
+        "10033300000000000000000000000000333000000000001",
+        "10000000000000000000000000000000000000000000001",
+        "10000000000000000000000000000000000000000000001",
         "11111111111111111111111111111111111111111111111",
     };
     const char* floring[] = {
-        "11111111111111111111111111111111111111111111111",
-        "11111111111111111111111111111111111111111111111",
-        "11222232232322321111111111111112222322323223211",
-        "11222222211112321111111111111112222222111123211",
-        "11222222212323233232323232323232222222123232311",
-        "11222222211112321111111111111112222222111123211",
-        "11222232232322321111111111111112222322323223211",
-        "11111111111111111111111111111111111111111111111",
-        "11111111111111111111111111111111111111111111111",
+        "22222222222222222222222222222222222222222222222",
+        "22222222222222222222222222222222222222222222222",
+        "22222232232322322222222222222222222322323223222",
+        "22222222222222322222222222222222222222222223222",
+        "22222222222323233232323232323232222222223232322",
+        "22222222222222322222222222222222222222222223222",
+        "22222232232322322222222222222222222322323223222",
+        "22222222222222222222222222222222222222222222222",
+        "22222222222222222222222222222222222222222222222",
     };
     const Map map = { ceiling, walling, floring };
     Hero hero = {
