@@ -16,6 +16,7 @@ On macOS you can do
 
     brew install sdl2
 
+Then build and run with
     
     make; ./littlewolf
 
