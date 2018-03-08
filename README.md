@@ -11,7 +11,12 @@ Get SDL2 on Debian-based systems (Ubuntu/Kali/etc)
 Get SDL2 on Red Hat-based systems (Fedora/CentOS/etc)
 
     sudo yum install SDL2-devel
+    
+On macOS you can do
 
+    brew install sdl2
+
+    
     make; ./littlewolf
 
 ![screenshot](scrots/2017-12-12-012113_500x500_scrot.png)
