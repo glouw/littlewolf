@@ -139,8 +139,10 @@ static Hit cast(const Point where, const Point direction, const char** const wal
     const Point delta = mul(direction, 0.01f);
     const Point dx = { delta.x, 0.0f };
     const Point dy = { 0.0f, delta.y };
-    const Point test = add(ray, dec(ray.x) == 0.0f ? dx : dec(ray.y) == 0.0f ? dy : delta);
-    const Hit hit = { tile(test, walling), ray };
+    const Point test = add(ray,
+        dec(ray.x) == 0.0f && dec(ray.y) == 0.0f ? delta :
+        dec(ray.x) == 0.0f ? dx : dy);
+    const Hit hit = { tile(test, walling), test };
     return hit.tile ? hit : cast(ray, direction, walling);
 }
 
@@ -249,7 +251,7 @@ Wall;
 
 static Wall project(const int xres, const int yres, const Line fov, const Point corrected)
 {
-    const float size = 0.5f * fov.a.x * xres / corrected.x;
+    const float size = 0.5f * fov.a.x * xres / (corrected.x < 1e-2f ? 1e-2f : corrected.x);
     const int top = (yres + size) / 2.0f;
     const int bot = (yres - size) / 2.0f;
     const Wall wall = { top > yres ? yres : top, bot < 0 ? 0 : bot, size };
@@ -369,7 +371,7 @@ static Line viewport(const float focal)
 static Hero born()
 {
     const Hero hero = {
-        viewport(0.8f),
+        viewport(1.0f),
         // Where.
         { 3.5f, 3.5f },
         // Velocity.
@@ -422,7 +424,7 @@ int main(int argc, char* argv[])
 {
     (void) argc;
     (void) argv;
-    const Gpu gpu = setup(800, 500);
+    const Gpu gpu = setup(500, 500);
     const Map map = build();
     Hero hero = born();
     while(!done())
