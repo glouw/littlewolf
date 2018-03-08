@@ -4,7 +4,7 @@ Littlewolf aims to be a very minimalistic software graphics
 engine reminiscent of the early wolfenstein and doom days.
 You will require either:
 
-   SDL2-devel or SDL2
+    SDL2-devel or SDL2
 
 Then build and run with
     
