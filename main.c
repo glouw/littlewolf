@@ -369,7 +369,7 @@ static Line viewport(const float focal)
 static Hero born()
 {
     const Hero hero = {
-        viewport(0.6f),
+        viewport(0.8f),
         // Where.
         { 3.5f, 3.5f },
         // Velocity.
