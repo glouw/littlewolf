@@ -195,14 +195,6 @@ static Gpu setup(const int xres, const int yres)
     return gpu;
 }
 
-static void release(const Gpu gpu)
-{
-    SDL_DestroyWindow(gpu.window);
-    SDL_DestroyRenderer(gpu.renderer);
-    SDL_DestroyTexture(gpu.texture);
-    SDL_Quit();
-}
-
 static void present(const Gpu gpu)
 {
     const SDL_Rect dst = {
@@ -339,7 +331,7 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
         for(int y = wall.bot; y < wall.top; y++)
             put(display, x, y, color(hit.tile));
         // Renders ceiling.
-        for(int y = wall.top; y < gpu.xres; y++)
+        for(int y = wall.top; y < gpu.yres; y++)
             put(display, x, y, color(tile(lerp(trace, +pcast(wall.size, gpu.yres, y)), map.ceiling)));
     }
     unlock(gpu);
@@ -371,7 +363,7 @@ static Line viewport(const float focal)
 static Hero born()
 {
     const Hero hero = {
-        viewport(1.0f),
+        viewport(0.8f),
         // Where.
         { 3.5f, 3.5f },
         // Velocity.
@@ -424,7 +416,7 @@ int main(int argc, char* argv[])
 {
     (void) argc;
     (void) argv;
-    const Gpu gpu = setup(500, 500);
+    const Gpu gpu = setup(800, 500);
     const Map map = build();
     Hero hero = born();
     while(!done())
@@ -434,6 +426,5 @@ int main(int argc, char* argv[])
         hero = move(hero, map.walling, key);
         render(hero, map, gpu);
     }
-    release(gpu);
     return 0;
 }

@@ -1,4 +1,4 @@
-CC = clang
+CC = gcc
 
 NAME = littlewolf
 
@@ -19,7 +19,7 @@ endif
 CFLAGS += -std=c99
 CFLAGS += -Wshadow -Wall -Wpedantic -Wextra -Wdouble-promotion
 CFLAGS += -g
-CFLAGS += -O3
+CFLAGS += -O3 -march=native
 
 LDFLAGS =
 ifdef ComSpec
