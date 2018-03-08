@@ -184,21 +184,9 @@ Gpu;
 static Gpu setup(const int res)
 {
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window* const window = SDL_CreateWindow(
-        "littlewolf",
-        SDL_WINDOWPOS_UNDEFINED,
-        SDL_WINDOWPOS_UNDEFINED,
-        res, res,
-        SDL_WINDOW_SHOWN);
-    SDL_Renderer* const renderer = SDL_CreateRenderer(
-        window,
-        -1,
-        SDL_RENDERER_ACCELERATED);
-    SDL_Texture* const texture = SDL_CreateTexture(
-        renderer,
-        SDL_PIXELFORMAT_ARGB8888,
-        SDL_TEXTUREACCESS_STREAMING,
-        res, res);
+    SDL_Window* const window = SDL_CreateWindow("littlewolf", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, res, res, SDL_WINDOW_SHOWN);
+    SDL_Renderer* const renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_Texture* const texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, res, res);
     const Gpu gpu = { window, renderer, texture, res };
     return gpu;
 }
@@ -280,7 +268,7 @@ static Hero spin(Hero hero, const uint8_t* key)
 
 static Hero move(Hero hero, const char** const walling, const uint8_t* key)
 {
-    const Point last = hero.where;
+    const Point last = hero.where, zero = { 0.0f, 0.0f };
     // Accelerates if <WASD>.
     if(key[SDL_SCANCODE_W] || key[SDL_SCANCODE_S] || key[SDL_SCANCODE_D] || key[SDL_SCANCODE_A])
     {
@@ -299,8 +287,11 @@ static Hero move(Hero hero, const char** const walling, const uint8_t* key)
     // Moves
     hero.where = add(hero.where, hero.velocity);
     // Sets velocity to zero if there is a collision and puts hero back in bounds.
-    const Point zero = { 0.0f, 0.0f };
-    if(tile(hero.where, walling)) hero.velocity = zero, hero.where = last;
+    if(tile(hero.where, walling))
+    {
+        hero.velocity = zero;
+        hero.where = last;
+    }
     return hero;
 }
 
@@ -349,51 +340,18 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
     SDL_Delay(ms < 0 ? 0 : ms);
 }
 
-static int finished()
+static int done()
 {
     SDL_Event event;
     SDL_PollEvent(&event);
-    if(event.type == SDL_QUIT
-    || event.key.keysym.sym == SDLK_END
-    || event.key.keysym.sym == SDLK_ESCAPE)
-        return 1;
-    return 0;
+    return event.type == SDL_QUIT
+        || event.key.keysym.sym == SDLK_END
+        || event.key.keysym.sym == SDLK_ESCAPE;
 }
 
-int main(int argc, char* argv[])
+static Hero born()
 {
-    (void) argc;
-    (void) argv;
-    const Gpu gpu = setup(500);
-    const char* ceiling[] = {
-        "111111111111111111111111111111111111111111111",
-        "122223223232232111111111111111222232232322321",
-        "122222221111232111111111111111222222211112321",
-        "122221221232323232323232323232222212212323231",
-        "122222221111232111111111111111222222211112321",
-        "122223223232232111111111111111222232232322321",
-        "111111111111111111111111111111111111111111111",
-    };
-    const char* walling[] = {
-        "111111111111111111111111111111111111111111111",
-        "100000000000000111111111111111000000000000001",
-        "103330001111000111111111111111033300011110001",
-        "103000000000000000000000000000030000030000001",
-        "103330001111000111111111111111033300011110001",
-        "100000000000000111111111111111000000000000001",
-        "111111111111111111111111111111111111111111111",
-    };
-    const char* floring[] = {
-        "111111111111111111111111111111111111111111111",
-        "122223223232232111111111111111222232232322321",
-        "122222221111232111111111111111222222211112321",
-        "122222221232323323232323232323222222212323231",
-        "122222221111232111111111111111222222211112321",
-        "122223223232232111111111111111222232232322321",
-        "111111111111111111111111111111111111111111111",
-    };
-    const Map map = { ceiling, walling, floring };
-    Hero hero = {
+    const Hero hero = {
         // Field of View.
         { { +1.0f, -1.0f }, { +1.0f, +1.0f } },
         // Where..
@@ -407,11 +365,59 @@ int main(int argc, char* argv[])
         // Theta (Radians).
         0.0f
     };
-    while(!finished())
+    return hero;
+}
+
+static Map build()
+{
+    // Note the static. Map lives in .bss in private.
+    static const char* ceiling[] = {
+        "111111111111111111111111111111111111111111111",
+        "122223223232232111111111111111222232232322321",
+        "122222221111232111111111111111222222211112321",
+        "122221221232323232323232323232222212212323231",
+        "122222221111232111111111111111222222211112321",
+        "122223223232232111111111111111222232232322321",
+        "111111111111111111111111111111111111111111111",
+    };
+    static const char* walling[] = {
+        "111111111111111111111111111111111111111111111",
+        "100000000000000111111111111111000000000000001",
+        "103330001111000111111111111111033300011110001",
+        "103000000000000000000000000000030000030000001",
+        "103330001111000111111111111111033300011110001",
+        "100000000000000111111111111111000000000000001",
+        "111111111111111111111111111111111111111111111",
+    };
+    static const char* floring[] = {
+        "111111111111111111111111111111111111111111111",
+        "122223223232232111111111111111222232232322321",
+        "122222221111232111111111111111222222211112321",
+        "122222221232323323232323232323222222212323231",
+        "122222221111232111111111111111222222211112321",
+        "122223223232232111111111111111222232232322321",
+        "111111111111111111111111111111111111111111111",
+    };
+    const Map map = {
+        ceiling,
+        walling,
+        floring,
+    };
+    return map;
+}
+
+int main(int argc, char* argv[])
+{
+    (void) argc;
+    (void) argv;
+    const Gpu gpu = setup(500);
+    const Map map = build();
+    Hero hero = born();
+    while(!done())
     {
         const uint8_t* key = SDL_GetKeyboardState(NULL);
         hero = spin(hero, key);
-        hero = move(hero, walling, key);
+        hero = move(hero, map.walling, key);
         render(hero, map, gpu);
     }
     release(gpu);
