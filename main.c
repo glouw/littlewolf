@@ -135,13 +135,13 @@ static float dec(const float x)
 
 static Hit cast(const Point where, const Point direction, const char** const walling)
 {
-    const Point ray = cmp(where, sh(where, direction), sv(where, direction));
+    const Point hor = sh(where, direction);
+    const Point ver = sv(where, direction);
+    const Point ray = cmp(where, hor, ver);
     const Point delta = mul(direction, 0.01f);
     const Point dx = { delta.x, 0.0f };
     const Point dy = { 0.0f, delta.y };
-    const Point test = add(ray,
-        dec(ray.x) == 0.0f && dec(ray.y) == 0.0f ? delta :
-        dec(ray.x) == 0.0f ? dx : dy);
+    const Point test = add(ray, mag(sub(hor, ver)) < 0.01f ? delta : dec(ray.x) == 0.0f ? dx : dy);
     const Hit hit = { tile(test, walling), test };
     return hit.tile ? hit : cast(ray, direction, walling);
 }
@@ -315,6 +315,7 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
     const int t0 = SDL_GetTicks();
     const Line camera = rotate(hero.fov, hero.theta);
     const Display display = lock(gpu);
+    //for(int x = 490; x < 491; x++)
     for(int x = 0; x < gpu.xres; x++)
     {
         // Casts a ray.
@@ -416,7 +417,7 @@ int main(int argc, char* argv[])
 {
     (void) argc;
     (void) argv;
-    const Gpu gpu = setup(800, 500);
+    const Gpu gpu = setup(700, 400);
     const Map map = build();
     Hero hero = born();
     while(!done())
