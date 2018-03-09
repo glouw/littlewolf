@@ -371,7 +371,7 @@ static Hero born()
         // Speed.
         0.10f,
         // Acceleration.
-        0.01f,
+        0.015f,
         // Theta (Radians).
         0.0f
     };
