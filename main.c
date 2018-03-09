@@ -8,6 +8,64 @@ typedef struct
 }
 Point;
 
+typedef struct
+{
+    char tile;
+    Point where;
+}
+Hit;
+
+typedef struct
+{
+    Point a;
+    Point b;
+}
+Line;
+
+typedef struct
+{
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Texture* texture;
+    int xres;
+    int yres;
+}
+Gpu;
+
+typedef struct
+{
+    uint32_t* pixels;
+    int width;
+}
+Display;
+
+typedef struct
+{
+    int top;
+    int bot;
+    float size;
+}
+Wall;
+
+typedef struct
+{
+    Line fov;
+    Point where;
+    Point velocity;
+    float speed;
+    float acceleration;
+    float theta;
+}
+Hero;
+
+typedef struct
+{
+    const char** ceiling;
+    const char** walling;
+    const char** floring;
+}
+Map;
+
 static Point turn(const Point a, const float t)
 {
     const Point b = {
@@ -120,13 +178,6 @@ static char tile(const Point a, const char** const tiles)
     return tiles[y][x] - '0';
 }
 
-typedef struct
-{
-    char tile;
-    Point where;
-}
-Hit;
-
 // Floating point decimal.
 static float dec(const float x)
 {
@@ -145,13 +196,6 @@ static Hit cast(const Point where, const Point direction, const char** const wal
     const Hit hit = { tile(test, walling), test };
     return hit.tile ? hit : cast(ray, direction, walling);
 }
-
-typedef struct
-{
-    Point a;
-    Point b;
-}
-Line;
 
 // Party casting (flooring and ceiling)
 static float pcast(const float size, const int yres, const int y)
@@ -173,16 +217,6 @@ static Point lerp(const Line l, const float n)
 {
     return add(l.a, mul(sub(l.b, l.a), n));
 }
-
-typedef struct
-{
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture* texture;
-    int xres;
-    int yres;
-}
-Gpu;
 
 static Gpu setup(const int xres, const int yres)
 {
@@ -207,13 +241,6 @@ static void present(const Gpu gpu)
     SDL_RenderPresent(gpu.renderer);
 }
 
-typedef struct
-{
-    uint32_t* pixels;
-    int width;
-}
-Display;
-
 static Display lock(const Gpu gpu)
 {
     void* screen;
@@ -233,14 +260,6 @@ static void unlock(const Gpu gpu)
     SDL_UnlockTexture(gpu.texture);
 }
 
-typedef struct
-{
-    int top;
-    int bot;
-    float size;
-}
-Wall;
-
 static Wall project(const int xres, const int yres, const Line fov, const Point corrected)
 {
     const float size = 0.5f * fov.a.x * xres / (corrected.x < 1e-2f ? 1e-2f : corrected.x);
@@ -249,17 +268,6 @@ static Wall project(const int xres, const int yres, const Line fov, const Point 
     const Wall wall = { top > yres ? yres : top, bot < 0 ? 0 : bot, size };
     return wall;
 }
-
-typedef struct
-{
-    Line fov;
-    Point where;
-    Point velocity;
-    float speed;
-    float acceleration;
-    float theta;
-}
-Hero;
 
 static Hero spin(Hero hero, const uint8_t* key)
 {
@@ -296,14 +304,6 @@ static Hero move(Hero hero, const char** const walling, const uint8_t* key)
     }
     return hero;
 }
-
-typedef struct
-{
-    const char** ceiling;
-    const char** walling;
-    const char** floring;
-}
-Map;
 
 static uint32_t color(const char tile)
 {
