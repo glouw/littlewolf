@@ -211,8 +211,6 @@ typedef struct
 {
     uint32_t* pixels;
     int width;
-    int xres;
-    int yres;
 }
 Display;
 
@@ -221,7 +219,7 @@ static Display lock(const Gpu gpu)
     void* screen;
     int pitch;
     SDL_LockTexture(gpu.texture, NULL, &screen, &pitch);
-    const Display display = { (uint32_t*) screen, pitch / (int) sizeof(uint32_t), gpu.xres, gpu.yres };
+    const Display display = { (uint32_t*) screen, pitch / (int) sizeof(uint32_t) };
     return display;
 }
 
