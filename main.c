@@ -211,6 +211,8 @@ typedef struct
 {
     uint32_t* pixels;
     int width;
+    int xres;
+    int yres;
 }
 Display;
 
@@ -219,7 +221,7 @@ static Display lock(const Gpu gpu)
     void* screen;
     int pitch;
     SDL_LockTexture(gpu.texture, NULL, &screen, &pitch);
-    const Display display = { (uint32_t*) screen, pitch / (int) sizeof(uint32_t) };
+    const Display display = { (uint32_t*) screen, pitch / (int) sizeof(uint32_t), gpu.xres, gpu.yres };
     return display;
 }
 
@@ -315,7 +317,6 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
     const int t0 = SDL_GetTicks();
     const Line camera = rotate(hero.fov, hero.theta);
     const Display display = lock(gpu);
-    //for(int x = 490; x < 491; x++)
     for(int x = 0; x < gpu.xres; x++)
     {
         // Casts a ray.
