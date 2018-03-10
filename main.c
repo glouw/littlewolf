@@ -119,13 +119,13 @@ static float slope(const Point a)
     return a.y / a.x;
 }
 
-// Fast floor. (math.h is too slow)
+// Fast floor (math.h is too slow).
 static int fl(const float x)
 {
     return (int) x - (x < (int) x);
 }
 
-// Fast ceil. (math.h is too slow)
+// Fast ceil (math.h is too slow).
 static int cl(const float x)
 {
     return (int) x + (x > (int) x);
@@ -176,18 +176,18 @@ static Hit cast(const Point where, const Point direction, const char** const wal
     const Point hor = sh(where, direction);
     const Point ver = sv(where, direction);
     const Point ray = cmp(where, hor, ver);
-    // Due to floating point error, the step may not make it into the next grid square.
-    // Three directions (delta, dx, dy) of a tiny step will be added to the ray
-    // depending on if the ray hit a horizontal wall, a vertical wall, or a corner of two walls.
-    const Point delta = mul(direction, 0.01f);
-    const Point dx = { delta.x, 0.0f };
-    const Point dy = { 0.0f, delta.y };
+    // Due to floating point error, the step may not make it to the next grid square.
+    // Three directions (dy, dx, dc) of a tiny step will be added to the ray
+    // depending on if the ray hit a horizontal wall, a vertical wall, or the corner of two walls, respectively.
+    const Point dc = mul(direction, 0.01f);
+    const Point dx = { dc.x, 0.0f };
+    const Point dy = { 0.0f, dc.y };
     const Point test = add(ray,
         // Tiny step for corner of two grid squares.
-        mag(sub(hor, ver)) < 0.01f ? delta :
+        mag(sub(hor, ver)) < 0.01f ? dc :
         // Tiny step for vertical grid square.
         dec(ray.x) == 0.0f ? dx :
-        // Otherwise it must be a tiny step for a horizontal grid square.
+        // Tiny step for a horizontal grid square.
         dy);
     const Hit hit = { tile(test, walling), test };
     // If a wall was not hit, then continue advancing the ray.
