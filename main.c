@@ -178,7 +178,8 @@ static Hit cast(const Point where, const Point direction, const char** const wal
     const Point ray = cmp(where, hor, ver);
     // Due to floating point error, the step may not make it to the next grid square.
     // Three directions (dy, dx, dc) of a tiny step will be added to the ray
-    // depending on if the ray hit a horizontal wall, a vertical wall, or the corner of two walls, respectively.
+    // depending on if the ray hit a horizontal wall, a vertical wall, or the corner
+    // of two walls, respectively.
     const Point dc = mul(direction, 0.01f);
     const Point dx = { dc.x, 0.0f };
     const Point dy = { 0.0f, dc.y };
@@ -194,7 +195,8 @@ static Hit cast(const Point where, const Point direction, const char** const wal
     return hit.tile ? hit : cast(ray, direction, walling);
 }
 
-// Party casting. Returns a percentage of <y> related to <yres> for ceiling and floor casting when lerping the floor or ceiling.
+// Party casting. Returns a percentage of <y> related to <yres> for ceiling and
+// floor casting when lerping the floor or ceiling.
 static float pcast(const float size, const int yres, const int y)
 {
     return size / (2 * (y + 1) - yres);
@@ -217,10 +219,23 @@ static Point lerp(const Line l, const float n)
 static Gpu setup(const int xres, const int yres)
 {
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window* const window = SDL_CreateWindow("littlewolf", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, xres, yres, SDL_WINDOW_SHOWN);
-    SDL_Renderer* const renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    // Notice the flip between xres and yres. The texture is 90 degrees flipped on its side for fast cache access.
-    SDL_Texture* const texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, yres, xres);
+    SDL_Window* const window = SDL_CreateWindow(
+        "littlewolf",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        xres, yres,
+        SDL_WINDOW_SHOWN);
+    SDL_Renderer* const renderer = SDL_CreateRenderer(
+        window,
+        -1,
+        SDL_RENDERER_ACCELERATED);
+    // Notice the flip between xres and yres.
+    // The texture is 90 degrees flipped on its side for fast cache access.
+    SDL_Texture* const texture = SDL_CreateTexture(
+        renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        yres, xres);
     if(window == NULL || renderer == NULL || texture == NULL)
     {
         puts(SDL_GetError());
@@ -230,7 +245,8 @@ static Gpu setup(const int xres, const int yres)
     return gpu;
 }
 
-// Presents the software gpu to the window. Calls the real GPU to rotate texture back 90 degrees before presenting.
+// Presents the software gpu to the window.
+// Calls the real GPU to rotate texture back 90 degrees before presenting.
 static void present(const Gpu gpu)
 {
     const SDL_Rect dst = {
