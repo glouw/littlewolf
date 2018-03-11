@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
 
 typedef struct
 {
@@ -211,7 +212,7 @@ static Point lerp(const Line l, const float n)
 }
 
 // Setups the software gpu.
-static Gpu setup(const int xres, const int yres)
+static Gpu setup(const int xres, const int yres, const bool vsync)
 {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window* const window = SDL_CreateWindow(
@@ -223,7 +224,7 @@ static Gpu setup(const int xres, const int yres)
     SDL_Renderer* const renderer = SDL_CreateRenderer(
         window,
         -1,
-        SDL_RENDERER_ACCELERATED);
+        SDL_RENDERER_ACCELERATED | (vsync ? SDL_RENDERER_PRESENTVSYNC : 0x0));
     // Notice the flip between xres and yres.
     // The texture is 90 degrees flipped on its side for fast cache access.
     SDL_Texture* const texture = SDL_CreateTexture(
@@ -364,13 +365,13 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
     }
     unlock(gpu);
     present(gpu);
-    // Caps frame rate.
+    // Caps frame rate to ~60 fps if the vertical sync (VSYNC) init failed.
     const int t1 = SDL_GetTicks();
-    const int ms = 15 - (t1 - t0);
+    const int ms = 16 - (t1 - t0);
     SDL_Delay(ms < 0 ? 0 : ms);
 }
 
-static int done()
+static bool done()
 {
     SDL_Event event;
     SDL_PollEvent(&event);
@@ -446,7 +447,7 @@ int main(int argc, char* argv[])
 {
     (void) argc;
     (void) argv;
-    const Gpu gpu = setup(700, 400);
+    const Gpu gpu = setup(700, 400, true);
     const Map map = build();
     Hero hero = born(0.8f);
     while(!done())
