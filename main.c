@@ -150,12 +150,6 @@ static Point sv(const Point a, const Point b)
     return c;
 }
 
-// Returns the closest point to <a>, not including <a>.
-static Point cmp(const Point a, const Point b, const Point c)
-{
-    return mag(sub(b, a)) < mag(sub(c, a)) ? b : c;
-}
-
 // Returns a decimal value of the ascii tile value on the map.
 static int tile(const Point a, const char** const tiles)
 {
@@ -176,7 +170,7 @@ static Hit cast(const Point where, const Point direction, const char** const wal
     // Determine whether to step horizontally or vertically on the grid.
     const Point hor = sh(where, direction);
     const Point ver = sv(where, direction);
-    const Point ray = cmp(where, hor, ver);
+    const Point ray = mag(sub(hor, where)) < mag(sub(ver, where)) ? hor : ver;
     // Due to floating point error, the step may not make it to the next grid square.
     // Three directions (dy, dx, dc) of a tiny step will be added to the ray
     // depending on if the ray hit a horizontal wall, a vertical wall, or the corner
@@ -186,12 +180,12 @@ static Hit cast(const Point where, const Point direction, const char** const wal
     const Point dy = { 0.0f, dc.y };
     const Point test = add(ray,
         // Tiny step for corner of two grid squares.
-        mag(sub(hor, ver)) < 0.01f ? dc :
+        mag(sub(hor, ver)) < 1e-3f ? dc :
         // Tiny step for vertical grid square.
         dec(ray.x) == 0.0f ? dx :
         // Tiny step for a horizontal grid square.
         dy);
-    const Hit hit = { tile(test, walling), test };
+    const Hit hit = { tile(test, walling), ray };
     // If a wall was not hit, then continue advancing the ray.
     return hit.tile ? hit : cast(ray, direction, walling);
 }
@@ -308,7 +302,7 @@ static Hero move(Hero hero, const char** const walling, const uint8_t* key)
     else hero.velocity = mul(hero.velocity, 1.0f - hero.acceleration / hero.speed);
     // Caps velocity if top speed is exceeded.
     if(mag(hero.velocity) > hero.speed) hero.velocity = mul(unit(hero.velocity), hero.speed);
-    // Moves
+    // Moves.
     hero.where = add(hero.where, hero.velocity);
     // Sets velocity to zero if there is a collision and puts hero back in bounds.
     if(tile(hero.where, walling))
@@ -322,7 +316,13 @@ static Hero move(Hero hero, const char** const walling, const uint8_t* key)
 // Returns a color value (RGB) from a decimal tile value.
 static uint32_t color(const int tile)
 {
-    return 0xAA << (8 * (tile - 1));
+    switch(tile)
+    {
+    default:
+    case 1: return 0x00AA0000; // Red.
+    case 2: return 0x0000AA00; // Green.
+    case 3: return 0x000000AA; // Blue.
+    }
 }
 
 // Calculations wall size using the <normal> ray to the wall.
@@ -332,6 +332,7 @@ static Wall project(const int xres, const int yres, const float focal, const Poi
     const float size = 0.5f * focal * xres / (normal.x < 1e-2f ? 1e-2f : normal.x);
     const int top = (yres + size) / 2.0f;
     const int bot = (yres - size) / 2.0f;
+    // Top and bottom values are clamped to screen size else renderer will waste cycles (or segfault) when rasterizing pixels off screen.
     const Wall wall = { top > yres ? yres : top, bot < 0 ? 0 : bot, size };
     return wall;
 }
@@ -345,8 +346,8 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
     // Ray cast for all columns of the window.
     for(int x = 0; x < gpu.xres; x++)
     {
-        const Point column = lerp(camera, x / (float) gpu.xres);
-        const Hit hit = cast(hero.where, column, map.walling);
+        const Point direction = lerp(camera, x / (float) gpu.xres);
+        const Hit hit = cast(hero.where, direction, map.walling);
         const Point ray = sub(hit.where, hero.where);
         const Point normal = turn(ray, -hero.theta);
         const Wall wall = project(gpu.xres, gpu.yres, hero.fov.a.x, normal);
@@ -388,10 +389,10 @@ static Line viewport(const float focal)
     return fov;
 }
 
-static Hero born()
+static Hero born(const float focal)
 {
     const Hero hero = {
-        viewport(0.8f),
+        viewport(focal),
         // Where.
         { 3.5f, 3.5f },
         // Velocity.
@@ -447,7 +448,7 @@ int main(int argc, char* argv[])
     (void) argv;
     const Gpu gpu = setup(700, 400);
     const Map map = build();
-    Hero hero = born();
+    Hero hero = born(0.8f);
     while(!done())
     {
         const uint8_t* key = SDL_GetKeyboardState(NULL);
