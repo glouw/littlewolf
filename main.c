@@ -326,11 +326,12 @@ static uint32_t color(const int tile)
     }
 }
 
-// Calculations wall size using the <normal> ray to the wall.
-static Wall project(const int xres, const int yres, const float focal, const Point normal)
+// Calculations wall size using the <corrected> ray to the wall.
+static Wall project(const int xres, const int yres, const float focal, const Point corrected)
 {
-    // The normal ray is clamped to some small value else size will shoot to infinity.
-    const float size = 0.5f * focal * xres / (normal.x < 1e-2f ? 1e-2f : normal.x);
+    // Normal distance of corrected ray is clamped to some small value else wall size will shoot to infinity.
+    const float normal = corrected.x < 1e-2f ? 1e-2f : corrected.x;
+    const float size = 0.5f * focal * xres / normal;
     const int top = (yres + size) / 2.0f;
     const int bot = (yres - size) / 2.0f;
     // Top and bottom values are clamped to screen size else renderer will waste cycles
@@ -351,9 +352,9 @@ static void render(const Hero hero, const Map map, const Gpu gpu)
         const Point direction = lerp(camera, x / (float) gpu.xres);
         const Hit hit = cast(hero.where, direction, map.walling);
         const Point ray = sub(hit.where, hero.where);
-        const Point normal = turn(ray, -hero.theta);
-        const Wall wall = project(gpu.xres, gpu.yres, hero.fov.a.x, normal);
         const Line trace = { hero.where, hit.where };
+        const Point corrected = turn(ray, -hero.theta);
+        const Wall wall = project(gpu.xres, gpu.yres, hero.fov.a.x, corrected);
         // Renders flooring.
         for(int y = 0; y < wall.bot; y++)
             put(display, x, y, color(tile(lerp(trace, -pcast(wall.size, gpu.yres, y)), map.floring)));
