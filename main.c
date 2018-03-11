@@ -1,7 +1,7 @@
 #include <SDL2/SDL.h>
-#include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct
 {
@@ -333,7 +333,8 @@ static Wall project(const int xres, const int yres, const float focal, const Poi
     const float size = 0.5f * focal * xres / (normal.x < 1e-2f ? 1e-2f : normal.x);
     const int top = (yres + size) / 2.0f;
     const int bot = (yres - size) / 2.0f;
-    // Top and bottom values are clamped to screen size else renderer will waste cycles (or segfault) when rasterizing pixels off screen.
+    // Top and bottom values are clamped to screen size else renderer will waste cycles
+    // (or segfault) when rasterizing pixels off screen.
     const Wall wall = { top > yres ? yres : top, bot < 0 ? 0 : bot, size };
     return wall;
 }
