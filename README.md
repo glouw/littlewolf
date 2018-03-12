@@ -19,4 +19,4 @@ Controls:
 
     exit: END, ESCAPE
 
-![screenshot](img/littlewolf.gif)
+![screenshot](img/gifwolf.gif)
