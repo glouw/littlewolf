@@ -20,16 +20,3 @@ Controls:
     exit: END, ESCAPE
 
 ![screenshot](img/littlewolf.gif)
-
-Littlewolf is portable and lightweight, compilable by clang, gcc, g++, mingw32,
-and supported on any platform that supports SDL2.
-
-Some ideas for your game:
-
-    - Implement texture mapping.
-
-    - Implement pixel shading where the pixels go darker the further they are from the player.
-
-    - Add sprites using the walls as a zbuffer.
-
-    - Make a game like Faster Than Light (FTL) or 0x10c where you control a spaceship with a programming language.
