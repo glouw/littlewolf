@@ -3,8 +3,6 @@
 Littlewolf aims to be a very minimalistic software graphics
 engine reminiscent of the early wolfenstein and doom days.
 
-*A Windows 10 release is now available.*
-
 Development packages you will require:
 
     SDL2-devel
