@@ -21,7 +21,7 @@ Controls:
 
     exit: END, ESCAPE
 
-![screenshot](img/2017-12-12-012113_500x500_scrot.png)
+![screenshot](img/littlewolf.gif)
 
 Littlewolf is portable and lightweight, compilable by clang, gcc, g++, mingw32,
 and supported on any platform that supports SDL2.
