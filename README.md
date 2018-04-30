@@ -1,7 +1,7 @@
 ![screenshot](img/logo.PNG)
 
 Littlewolf aims to be a very minimalistic software graphics
-engine reminiscent of the early Wolfenstein and Doom days.
+engine reminiscent to some of the early works of Carmack at id.
 
     make; ./littlewolf
 
