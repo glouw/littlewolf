@@ -326,7 +326,7 @@ static uint32_t color(const int tile)
     }
 }
 
-// Calculations wall size using the <corrected> ray to the wall.
+// Calculates wall size using the <corrected> ray to the wall.
 static Wall project(const int xres, const int yres, const float focal, const Point corrected)
 {
     // Normal distance of corrected ray is clamped to some small value else wall size will shoot to infinity.
