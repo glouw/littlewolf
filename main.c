@@ -214,7 +214,11 @@ static Point lerp(const Line l, const float n)
 // Setups the software gpu.
 static Gpu setup(const int xres, const int yres, const bool vsync)
 {
-    SDL_Init(SDL_INIT_VIDEO);
+    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    {
+        puts(SDL_GetError());
+        exit(1);
+    }
     SDL_Window* const window = SDL_CreateWindow(
         "littlewolf",
         SDL_WINDOWPOS_UNDEFINED,

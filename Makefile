@@ -9,7 +9,7 @@ CC = gcc
 SRC = main.c
 
 all:
-	$(CC) $(CFLAGS) $(LDFLAGS) $(SRC) -o $(BIN)
+	$(CC) $(CFLAGS) $(SRC) $(LDFLAGS) -o $(BIN)
 
 run:
 	./$(BIN)
