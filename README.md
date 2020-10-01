@@ -2,6 +2,8 @@
 
 Littlewolf aims to be a very minimalistic software graphics
 engine reminiscent to some of the early works of Carmack at id.
+HOPE YOU PEOPLE LIKE IT
+Thanks to all!
 
     make; ./littlewolf
 
